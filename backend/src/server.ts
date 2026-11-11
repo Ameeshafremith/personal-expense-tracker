@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
+import categoryRoutes from "./routes/category.routes.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -20,6 +21,9 @@ app.get("/", (req, res) => {
 
 // Authentication routes
 app.use("/api/auth", authRoutes);
+
+// Category routes
+app.use("/api/categories", categoryRoutes);
 
 const startServer = async (): Promise<void> => {
     try {
