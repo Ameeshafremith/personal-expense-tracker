@@ -1,3 +1,4 @@
+
 import { Schema, model } from "mongoose";
 
 interface IUser {
@@ -5,6 +6,8 @@ interface IUser {
     email: string;
     passwordHash: string;
     role: "user" | "admin";
+    refreshTokenHash?: string;
+    refreshTokenExpiresAt?: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -33,6 +36,16 @@ const userSchema = new Schema<IUser>(
             type: String,
             enum: ["user", "admin"],
             default: "user"
+        },
+
+        refreshTokenHash: {
+            type: String,
+            select: false
+        },
+
+        refreshTokenExpiresAt: {
+            type: Date,
+            select: false
         }
     },
     {
