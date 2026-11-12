@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import expenseRoutes from "./routes/expense.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import reportRoutes from "./routes/report.routes.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -32,6 +33,9 @@ app.use("/api/expenses", expenseRoutes);
 
 // Dashboard routes
 app.use("/api/dashboard", dashboardRoutes);
+
+// Report routes
+app.use("/api/reports", reportRoutes);
 
 const startServer = async (): Promise<void> => {
     try {

@@ -114,13 +114,86 @@ export const addExpense = async (
     }
 };
 
-// Get all expenses belonging to the logged-in user
+
+// Get expenses with optional filters
 export const getExpenses = async (
     req: Request,
     res: Response
 ): Promise<void> => {
     try {
-        const expenses = await getUserExpenses(req.user!.userId);
+        const { categoryId, startDate, endDate } = req.query;
+
+        // Validate query parameter types
+        if (
+            (categoryId !== undefined && typeof categoryId !== "string") ||
+            (startDate !== undefined && typeof startDate !== "string") ||
+            (endDate !== undefined && typeof endDate !== "string")
+        ) {
+            res.status(400).json({
+                success: false,
+                message: "Invalid filter parameters"
+            });
+            return;
+        }
+
+        // Validate category ID
+        if (
+            categoryId &&
+            !mongoose.Types.ObjectId.isValid(categoryId)
+        ) {
+            res.status(400).json({
+                success: false,
+                message: "Invalid category ID"
+            });
+            return;
+        }
+
+        // Convert and validate dates
+        const parsedStartDate = startDate
+            ? new Date(startDate)
+            : undefined;
+
+        const parsedEndDate = endDate
+            ? new Date(endDate)
+            : undefined;
+
+        if (
+            (parsedStartDate && Number.isNaN(parsedStartDate.getTime())) ||
+            (parsedEndDate && Number.isNaN(parsedEndDate.getTime()))
+        ) {
+            res.status(400).json({
+                success: false,
+                message: "Invalid date filter"
+            });
+            return;
+        }
+
+        // Include the entire end date when a date-only value is provided
+        if (endDate && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+            parsedEndDate!.setUTCHours(23, 59, 59, 999);
+        }
+
+        // Validate date range
+        if (
+            parsedStartDate &&
+            parsedEndDate &&
+            parsedStartDate > parsedEndDate
+        ) {
+            res.status(400).json({
+                success: false,
+                message: "Start date cannot be later than end date"
+            });
+            return;
+        }
+
+        const expenses = await getUserExpenses(
+            req.user!.userId,
+            {
+                categoryId,
+                startDate: parsedStartDate,
+                endDate: parsedEndDate
+            }
+        );
 
         res.status(200).json({
             success: true,

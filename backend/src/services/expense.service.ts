@@ -41,12 +41,52 @@ export const createExpense = async (
     });
 };
 
-// Get all expenses belonging to a user
-export const getUserExpenses = async (userId: string) => {
-    return await Expense.find({ userId })
+
+interface ExpenseFilters {
+    categoryId?: string;
+    startDate?: Date;
+    endDate?: Date;
+}
+
+// Get expenses with optional category and date filters
+export const getUserExpenses = async (
+    userId: string,
+    filters: ExpenseFilters = {}
+) => {
+    const query: {
+        userId: Types.ObjectId;
+        categoryId?: Types.ObjectId;
+        date?: {
+            $gte?: Date;
+            $lte?: Date;
+        };
+    } = {
+        userId: new Types.ObjectId(userId)
+    };
+
+    // Filter by category
+    if (filters.categoryId) {
+        query.categoryId = new Types.ObjectId(filters.categoryId);
+    }
+
+    // Filter by date range
+    if (filters.startDate || filters.endDate) {
+        query.date = {};
+
+        if (filters.startDate) {
+            query.date.$gte = filters.startDate;
+        }
+
+        if (filters.endDate) {
+            query.date.$lte = filters.endDate;
+        }
+    }
+
+    return await Expense.find(query)
         .populate("categoryId", "name")
         .sort({ date: -1 });
 };
+
 
 // Update an expense
 export const updateExpense = async (
