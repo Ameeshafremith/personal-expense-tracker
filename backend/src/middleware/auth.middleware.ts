@@ -34,7 +34,15 @@ const authMiddleware = (
         }
 
         // Extract the token
-        const token = authHeader.split(" ")[1];
+        const token = authHeader.slice(7).trim();
+
+        if (!token) {
+            res.status(401).json({
+                success: false,
+                message: "Authentication token is missing."
+            });
+            return;
+        }
 
         // Check JWT secret
         const jwtSecret = process.env.JWT_SECRET;
