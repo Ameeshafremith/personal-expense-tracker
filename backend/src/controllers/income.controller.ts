@@ -5,7 +5,8 @@ import {
     getIncomes,
     getIncomeById,
     receiveIncome,
-    updateIncome
+    updateIncome,
+    deleteIncome
 } from "../services/income.service.js";
 
 const getErrorStatus = (message: string) => {
@@ -290,3 +291,29 @@ export const editIncome = async (req: Request, res: Response) => {
     }
 };
 
+
+// Delete an income record
+export const removeIncome = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        await deleteIncome(
+            String(req.params.incomeId),
+            req.user!.userId
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Income deleted successfully"
+        });
+
+    } catch (error: any) {
+        const message = error.message || "Failed to delete income";
+
+        return res.status(getErrorStatus(message)).json({
+            success: false,
+            message
+        });
+    }
+};

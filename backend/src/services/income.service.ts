@@ -452,3 +452,83 @@ export const updateIncome = async (
     }
 };
 
+
+// Delete an income record
+export const deleteIncome = async (
+    incomeId: string,
+    userId: string
+) => {
+    if (!Types.ObjectId.isValid(incomeId)) {
+        throw new Error("Invalid income ID");
+    }
+
+    const session = await mongoose.startSession();
+
+    try {
+        await session.withTransaction(async () => {
+            const income = await Income.findOne({
+                _id: incomeId,
+                userId
+            }).session(session);
+
+            if (!income) {
+                throw new Error("Income record not found");
+            }
+
+            // Reverse wallet balance and remove linked transaction
+            // only when the income was already received.
+            if (income.status === "received") {
+                if (!income.transactionId) {
+                    throw new Error(
+                        "Linked income transaction was not found"
+                    );
+                }
+
+                const wallet = await Wallet.findOne({
+                    _id: income.walletId,
+                    userId
+                }).session(session);
+
+                if (!wallet) {
+                    throw new Error("Income wallet not found");
+                }
+
+                const transaction = await Transaction.findOne({
+                    _id: income.transactionId,
+                    userId,
+                    type: "income"
+                }).session(session);
+
+                if (!transaction) {
+                    throw new Error(
+                        "Linked income transaction was not found"
+                    );
+                }
+
+                // Reverse the received income from the wallet.
+                wallet.currentBalance -= transaction.amount;
+                await wallet.save({ session });
+
+                // Remove the linked transaction.
+                await Transaction.deleteOne({
+                    _id: transaction._id,
+                    userId
+                }).session(session);
+            }
+
+            // Delete only this income record.
+            await Income.deleteOne({
+                _id: incomeId,
+                userId
+            }).session(session);
+        });
+
+        return {
+            message: "Income deleted successfully"
+        };
+    } finally {
+        await session.endSession();
+    }
+};
+
+

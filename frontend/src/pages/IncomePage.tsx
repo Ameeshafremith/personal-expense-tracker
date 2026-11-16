@@ -15,6 +15,7 @@ import {
     Repeat,
     CircleDollarSign,
     Pencil,
+    Trash2,
 } from "lucide-react";
 
 import api from "../services/api";
@@ -96,6 +97,7 @@ function IncomePage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [receivingId, setReceivingId] = useState("");
+    const [deletingId, setDeletingId] = useState("");
 
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -316,6 +318,36 @@ function IncomePage() {
             );
         } finally {
             setReceivingId("");
+        }
+    };
+
+    const handleDelete = async (income: Income) => {
+        const message =
+            income.status === "received"
+                ? `Delete "${income.title}" (${formatCurrency(income.amount)})?\n\nThis will also reverse the amount from ${getWalletName(income.walletId)} and delete its linked income transaction.`
+                : `Delete the expected income record "${income.title}" (${formatCurrency(income.amount)})?`;
+
+        const confirmed = window.confirm(message);
+
+        if (!confirmed) return;
+
+        try {
+            setDeletingId(income._id);
+            setError("");
+            setSuccess("");
+
+            await api.delete(`/incomes/${income._id}`);
+
+            setSuccess("Income deleted successfully.");
+
+            await fetchData();
+        } catch (err: any) {
+            setError(
+                err.response?.data?.message ||
+                "Unable to delete the income record."
+            );
+        } finally {
+            setDeletingId("");
         }
     };
 
@@ -597,7 +629,8 @@ function IncomePage() {
                                             <div className="flex justify-end gap-2">
                                                 <button
                                                     onClick={() => openEditModal(income)}
-                                                    className="flex items-center gap-2 rounded-xl border border-violet-300/20 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-300 transition hover:bg-violet-500/20"
+                                                    disabled={!!deletingId}
+                                                    className="flex items-center gap-2 rounded-xl border border-violet-300/20 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-300 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                                                 >
                                                     <Pencil size={14} />
                                                     Edit
@@ -606,7 +639,7 @@ function IncomePage() {
                                                 {income.status === "expected" && (
                                                     <button
                                                         onClick={() => handleReceive(income)}
-                                                        disabled={receivingId === income._id}
+                                                        disabled={!!receivingId || !!deletingId}
                                                         className="flex items-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                                                     >
                                                         <CheckCircle2 size={15} />
@@ -615,6 +648,17 @@ function IncomePage() {
                                                             : "Mark Received"}
                                                     </button>
                                                 )}
+
+                                                <button
+                                                    onClick={() => handleDelete(income)}
+                                                    disabled={!!deletingId || !!receivingId}
+                                                    className="flex items-center gap-2 rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    <Trash2 size={14} />
+                                                    {deletingId === income._id
+                                                        ? "Deleting..."
+                                                        : "Delete"}
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>

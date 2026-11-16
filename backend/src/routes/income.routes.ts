@@ -5,7 +5,8 @@ import {
     getAllIncomes,
     getSingleIncome,
     markIncomeReceived,
-    editIncome
+    editIncome,
+    removeIncome
 } from "../controllers/income.controller.js";
 import authMiddleware from "../middleware/auth.middleware.js";
 
@@ -18,5 +19,6 @@ router.get("/", getAllIncomes);
 router.get("/:incomeId", getSingleIncome);
 router.patch("/:incomeId/receive", markIncomeReceived);
 router.patch("/:incomeId", editIncome);
+router.delete("/:incomeId", removeIncome);
 
 export default router;
