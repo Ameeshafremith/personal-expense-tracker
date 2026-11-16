@@ -104,11 +104,15 @@ api.interceptors.response.use(
 
             localStorage.removeItem("token");
 
-            // Redirect only when the user is not already on an authentication page.
-            if (
-                window.location.pathname !== "/login" &&
-                window.location.pathname !== "/register"
-            ) {
+            // Redirect only when the user is not already on a public authentication page.
+            const publicAuthPages = [
+                "/login",
+                "/register",
+                "/forgot-password",
+                "/reset-password",
+            ];
+
+            if (!publicAuthPages.includes(window.location.pathname)) {
                 window.location.assign("/login");
             }
 

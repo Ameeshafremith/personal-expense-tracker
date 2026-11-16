@@ -11,6 +11,8 @@ interface IUser {
     financialYearStartMonth: number;
     mobileNumber?: string;
     profilePicture?: string;
+    resetPasswordTokenHash?: string;
+    resetPasswordExpiresAt?: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -47,6 +49,16 @@ const userSchema = new Schema<IUser>(
         },
 
         refreshTokenExpiresAt: {
+            type: Date,
+            select: false
+        },
+
+        resetPasswordTokenHash: {
+            type: String,
+            select: false
+        },
+
+        resetPasswordExpiresAt: {
             type: Date,
             select: false
         },

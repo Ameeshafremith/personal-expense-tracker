@@ -6,7 +6,9 @@ import {
     registerUser,
     loginUser,
     refreshAccessToken,
-    logoutUser
+    logoutUser,
+    forgotPassword,
+    resetPassword
 } from "../controllers/auth.controller.js";
 
 const router = Router();
@@ -15,6 +17,8 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/refresh", refreshAccessToken);
 router.post("/logout", logoutUser);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 router.get("/profile", authMiddleware, async (req, res) => {
     try {

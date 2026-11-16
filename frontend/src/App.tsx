@@ -33,6 +33,9 @@ import SimulatorPage from "./pages/SimulatorPage";
 
 import ProfilePage from "./pages/ProfilePage";
 
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+
 function App() {
     const dispatch = useAppDispatch();
 
@@ -51,6 +54,16 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
 
+                <Route
+                    path="/forgot-password"
+                    element={<ForgotPasswordPage />}
+                />
+
+                <Route
+                    path="/reset-password"
+                    element={<ResetPasswordPage />}
+                />
+                
                 <Route element={<ProtectedRoute />}>
                     <Route element={<AppLayout />}>
                         <Route path="/dashboard" element={<DashboardPage />} />
@@ -66,6 +79,7 @@ function App() {
                         <Route path="/savings" element={<SavingsPage />} />
                         <Route path="/simulator" element={<SimulatorPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
+                        
                     </Route>
                 </Route>
 
