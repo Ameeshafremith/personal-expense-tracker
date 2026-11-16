@@ -8,6 +8,9 @@ interface IUser {
     role: "user" | "admin";
     refreshTokenHash?: string;
     refreshTokenExpiresAt?: Date;
+    financialYearStartMonth: number;
+    mobileNumber?: string;
+    profilePicture?: string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -46,7 +49,26 @@ const userSchema = new Schema<IUser>(
         refreshTokenExpiresAt: {
             type: Date,
             select: false
+        },
+
+        financialYearStartMonth: {
+            type: Number,
+            required: true,
+            min: 1,
+            max: 12,
+            default: 1
+        },
+
+        mobileNumber: {
+            type: String,
+            trim: true,
+            maxlength: 20
+        },
+        profilePicture: {
+            type: String,
+            trim: true
         }
+
     },
     {
         timestamps: true
