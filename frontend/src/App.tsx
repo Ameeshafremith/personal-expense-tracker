@@ -28,6 +28,10 @@ import EnvelopesPage from "./pages/EnvelopesPage";
 import IncomePage from "./pages/IncomePage";
 
 //import CalendarPage from "./pages/CalendarPage";
+import SavingsPage from "./pages/SavingsPage";
+import SimulatorPage from "./pages/SimulatorPage";
+
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
     const dispatch = useAppDispatch();
@@ -59,6 +63,9 @@ function App() {
                         <Route path="/envelopes" element={<EnvelopesPage />} />
                         <Route path="/income" element={<IncomePage />} />
                         {/* <Route path="/calendar" element={<CalendarPage />} /> */}
+                        <Route path="/savings" element={<SavingsPage />} />
+                        <Route path="/simulator" element={<SimulatorPage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
                     </Route>
                 </Route>
 

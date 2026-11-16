@@ -8,12 +8,22 @@ export const getFinancialYearReport = async (
     res: Response
 ) => {
     try {
-        const year = Number(req.query.year);
+        const yearParam = req.query.year;
 
-        if (!req.query.year) {
+        if (!yearParam || typeof yearParam !== "string") {
             res.status(400).json({
                 success: false,
                 message: "Financial year is required"
+            });
+            return;
+        }
+
+        const year = Number(yearParam);
+
+        if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+            res.status(400).json({
+                success: false,
+                message: "Please provide a valid financial year"
             });
             return;
         }
@@ -31,21 +41,25 @@ export const getFinancialYearReport = async (
         const summary = await getFinancialYearSummary(
             req.user!.userId,
             year,
-            user.financialYearStartMonth ?? 1
+            user.financialYearStartMonth ?? 4
         );
 
         res.status(200).json({
             success: true,
             data: summary
         });
-    } catch (error: any) {
-        const message = error.message || "Failed to generate financial year report";
 
-        res.status(
-            message.includes("valid") || message.includes("must be")
-                ? 400
-                : 500
-        ).json({
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error
+                ? error.message
+                : "Failed to generate financial year report";
+
+        const isValidationError =
+            message.includes("valid") ||
+            message.includes("must be");
+
+        res.status(isValidationError ? 400 : 500).json({
             success: false,
             message
         });

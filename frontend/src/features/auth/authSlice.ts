@@ -1,5 +1,5 @@
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import type { PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import api from "../../services/api";
 
@@ -8,6 +8,12 @@ interface User {
     name: string;
     email: string;
     role: "user" | "admin";
+    mobileNumber?: string;
+    profilePicture?: string;
+}
+
+interface ApiUser extends User {
+    _id?: string;
 }
 
 interface AuthState {
@@ -33,7 +39,7 @@ interface AuthResponse {
     success: boolean;
     message: string;
     token?: string;
-    user: User & { _id?: string };
+    user: ApiUser;
 }
 
 const initialState: AuthState = {
@@ -43,6 +49,11 @@ const initialState: AuthState = {
     initialized: false,
     error: null,
 };
+
+const normalizeUser = (user: ApiUser): User => ({
+    ...user,
+    id: user.id || user._id || "",
+});
 
 export const loginUser = createAsyncThunk<
     AuthResponse,
@@ -111,7 +122,6 @@ export const logoutUser = createAsyncThunk<
             await api.post("/auth/logout");
             dispatch(logout());
         } catch (error) {
-            // Clear the local session even if the server request fails.
             dispatch(logout());
 
             if (axios.isAxiosError(error)) {
@@ -133,8 +143,8 @@ export const restoreSession = createAsyncThunk<
     "auth/restoreSession",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await api.get<{ user: User }>("/auth/profile");
-            return response.data.user;
+            const response = await api.get<{ user: ApiUser }>("/auth/profile");
+            return normalizeUser(response.data.user);
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 return rejectWithValue(
@@ -157,8 +167,19 @@ const authSlice = createSlice({
             state.isAuthenticated = false;
             state.error = null;
         },
+
         clearAuthError: (state) => {
             state.error = null;
+        },
+
+        // Update the logged-in user's details after profile changes.
+        updateAuthUser: (state, action: PayloadAction<Partial<User>>) => {
+            if (state.user) {
+                state.user = {
+                    ...state.user,
+                    ...action.payload,
+                };
+            }
         },
     },
     extraReducers: (builder) => {
@@ -170,12 +191,7 @@ const authSlice = createSlice({
             })
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.loading = false;
-                const user = action.payload.user;
-
-                state.user = {
-                    ...user,
-                    id: user.id || user._id || "",
-                };
+                state.user = normalizeUser(action.payload.user);
                 state.isAuthenticated = true;
             })
             .addCase(loginUser.rejected, (state, action) => {
@@ -195,8 +211,10 @@ const authSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload || "Registration failed";
             })
+
+            // Restore session
             .addCase(restoreSession.pending, (state) => {
-            state.initialized = false;
+                state.initialized = false;
             })
             .addCase(restoreSession.fulfilled, (state, action) => {
                 state.user = action.payload;
@@ -212,5 +230,10 @@ const authSlice = createSlice({
     },
 });
 
-export const { logout, clearAuthError } = authSlice.actions;
+export const {
+    logout,
+    clearAuthError,
+    updateAuthUser,
+} = authSlice.actions;
+
 export default authSlice.reducer;

@@ -10,12 +10,18 @@ import {
     TrendingUp,
     Calculator,
     FileChartColumn,
+    UserRound,
+    ChevronDown,
+    Settings,
+    Menu,
+    X
 } from "lucide-react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { logoutUser } from "../features/auth/authSlice";
+import { logoutUser, updateAuthUser } from "../features/auth/authSlice";
+import api from "../services/api";
 
 const navigationItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -25,21 +31,50 @@ const navigationItems = [
     { name: "Budgets", path: "/budgets", icon: ChartPie },
     { name: "Envelopes", path: "/envelopes", icon: Mail },
     { name: "Savings", path: "/savings", icon: PiggyBank },
-    { name: "Income Management",path: "/income",icon: TrendingUp},
+    { name: "Income Management", path: "/income", icon: TrendingUp },
     { name: "Simulator", path: "/simulator", icon: Calculator },
     { name: "Reports", path: "/reports", icon: FileChartColumn },
 ];
 
 function AppLayout() {
-    const dispatch = useAppDispatch();
     const navigate = useNavigate();
+    const dispatch = useAppDispatch();
+
     const user = useAppSelector((state) => state.auth.user);
+
     const [menuOpen, setMenuOpen] = useState(false);
+    const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
     const handleLogout = async () => {
         await dispatch(logoutUser());
+        setMenuOpen(false);
+        setProfileMenuOpen(false);
         navigate("/login", { replace: true });
     };
+
+    useEffect(() => {
+        if (!user?.id) return;
+
+        const loadProfile = async () => {
+            try {
+                const response = await api.get("/profile");
+                const profile = response.data.data;
+
+                dispatch(
+                    updateAuthUser({
+                        name: profile.name,
+                        email: profile.email,
+                        mobileNumber: profile.mobileNumber,
+                        profilePicture: profile.profilePicture,
+                    })
+                );
+            } catch (error) {
+                console.error("Failed to load header profile:", error);
+            }
+        };
+
+        loadProfile();
+    }, [dispatch, user?.id]);
 
     return (
         <div className="relative min-h-screen overflow-x-hidden bg-[#090D18] text-white">
@@ -93,8 +128,28 @@ function AppLayout() {
                         ))}
                     </nav>
 
-                    {/* User Details */}
-                    <div className="flex shrink-0 items-center gap-3">
+                    {/* Mobile Menu Button and User Profile */}
+                    <div className="relative flex shrink-0 items-center gap-3">
+
+                        {/* Mobile Navigation Toggle */}
+                        <button
+                            onClick={() => {
+                                setMenuOpen((prev) => !prev);
+                                setProfileMenuOpen(false);
+                            }}
+                            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20 lg:hidden"
+                            aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+                            aria-expanded={menuOpen}
+                            aria-controls="mobile-navigation"
+                        >
+                            {menuOpen ? (
+                                <X size={22} />
+                            ) : (
+                                <Menu size={22} />
+                            )}
+                        </button>
+
+                        {/* User Information */}
                         <div className="hidden text-right sm:block">
                             <p className="text-sm font-semibold">
                                 {user?.name || "User"}
@@ -104,31 +159,81 @@ function AppLayout() {
                             </p>
                         </div>
 
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 font-semibold text-violet-200 shadow-lg shadow-violet-500/10 backdrop-blur-xl">
-                            {(user?.name || "U").charAt(0).toUpperCase()}
-                        </div>
-
+                        {/* Profile Picture Button */}
                         <button
-                            onClick={handleLogout}
-                            className="hidden rounded-full border border-white/15 bg-white/[0.08] px-4 py-2 text-sm text-slate-200 backdrop-blur-xl transition hover:border-rose-300/30 hover:bg-rose-400/15 sm:block"
+                            onClick={() => {
+                                setProfileMenuOpen((prev) => !prev);
+                                setMenuOpen(false);
+                            }}
+                            className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 p-1.5 transition hover:bg-white/15"
+                            aria-label="Open profile menu"
+                            aria-expanded={profileMenuOpen}
                         >
-                            Logout
+                            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-violet-300/30 bg-gradient-to-br from-violet-500/40 to-blue-500/40 font-semibold text-violet-100">
+                                {user?.profilePicture ? (
+                                    <img
+                                        src={user.profilePicture}
+                                        alt="Profile"
+                                        className="h-full w-full object-cover"
+                                    />
+                                ) : (
+                                    (user?.name || "U").charAt(0).toUpperCase()
+                                )}
+                            </div>
+
+                            <ChevronDown
+                                size={16}
+                                className={`hidden text-slate-300 transition-transform sm:block ${
+                                    profileMenuOpen ? "rotate-180" : ""
+                                }`}
+                            />
                         </button>
 
-                        {/* Mobile Menu Button */}
-                        <button
-                            onClick={() => setMenuOpen(!menuOpen)}
-                            className="rounded-full border border-white/20 bg-white/10 px-3 py-2 text-lg backdrop-blur-xl lg:hidden"
-                            aria-label="Toggle navigation"
-                        >
-                            {menuOpen ? "✕" : "☰"}
-                        </button>
+                        {/* Profile Dropdown */}
+                        {profileMenuOpen && (
+                            <div className="absolute right-0 top-14 z-[60] w-64 overflow-hidden rounded-2xl border border-white/10 bg-[#151C2E] shadow-2xl shadow-black/40">
+
+                                <div className="border-b border-white/10 px-4 py-4">
+                                    <p className="font-semibold text-white">
+                                        {user?.name || "User"}
+                                    </p>
+
+                                    <p className="mt-1 truncate text-xs text-slate-400">
+                                        {user?.email || ""}
+                                    </p>
+                                </div>
+
+                                <div className="p-2">
+                                    <button
+                                        onClick={() => {
+                                            setProfileMenuOpen(false);
+                                            navigate("/profile");
+                                        }}
+                                        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-200 transition hover:bg-violet-500/15 hover:text-violet-200"
+                                    >
+                                        <UserRound size={18} />
+                                        My Profile
+                                    </button>
+
+                                    <button
+                                        onClick={handleLogout}
+                                        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-rose-300 transition hover:bg-rose-500/10"
+                                    >
+                                        <Settings size={18} />
+                                        Logout
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* Mobile Navigation */}
                 {menuOpen && (
-                    <nav className="mx-auto mt-4 grid max-w-[600px] grid-cols-2 gap-2 rounded-3xl border border-white/20 bg-[#171E30]/95 p-4 shadow-2xl backdrop-blur-2xl sm:grid-cols-3 lg:hidden">
+                    <nav
+                        id="mobile-navigation"
+                        className="mx-auto mt-4 grid max-w-[600px] grid-cols-2 gap-2 rounded-3xl border border-white/20 bg-[#171E30]/95 p-4 shadow-2xl backdrop-blur-2xl sm:grid-cols-3 lg:hidden"
+                    >
                         {navigationItems.map((item) => (
                             <NavLink
                                 key={item.path}
