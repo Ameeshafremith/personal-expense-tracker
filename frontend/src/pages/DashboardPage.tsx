@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import { useAppSelector } from "../app/hooks";
+import DashboardCalendar from "../components/DashboardCalendar";
 
 interface CategoryStat {
     expenseCount: number;
@@ -161,6 +162,9 @@ function DashboardPage() {
                             </p>
                         </div>
                     </section>
+
+                    {/* Financial Calendar */}
+                    <DashboardCalendar />
 
                     {/* Recent expenses and category breakdown */}
                     <section className="grid gap-6 xl:grid-cols-5">

@@ -1,24 +1,25 @@
 
-import Expense from "../models/expense.model.js";
+import Transaction from "../models/transaction.model.js";
 
 interface ReportFilters {
     startDate: Date;
     endDate: Date;
 }
 
-// Retrieve expenses for a user's PDF report
+// Retrieve expense transactions for a user's PDF report
 export const getExpenseReportData = async (
     userId: string,
     filters: ReportFilters
 ) => {
-    const expenses = await Expense.find({
+    const expenses = await Transaction.find({
         userId,
+        type: "expense",
         date: {
             $gte: filters.startDate,
-            $lte: filters.endDate
-        }
+            $lte: filters.endDate,
+        },
     })
-        .populate<{ categoryId: { name: string } }>(
+        .populate<{ categoryId: { name: string } | null }>(
             "categoryId",
             "name"
         )
@@ -32,6 +33,6 @@ export const getExpenseReportData = async (
     return {
         expenses,
         totalAmount,
-        expenseCount: expenses.length
+        expenseCount: expenses.length,
     };
 };

@@ -1,16 +1,23 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+    FileText,
+    Download,
+    CalendarDays,
+    Sparkles,
+    CheckCircle2,
+} from "lucide-react";
 import api from "../services/api";
 
 function ReportsPage() {
-    const navigate = useNavigate();
-
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+
+    const glassCard =
+        "rounded-3xl border border-white/10 bg-white/[0.055] shadow-[0_8px_32px_rgba(0,0,0,0.20)] backdrop-blur-2xl";
 
     const handleGenerateReport = async () => {
         setError("");
@@ -53,11 +60,12 @@ function ReportsPage() {
 
             window.URL.revokeObjectURL(downloadUrl);
 
-            setSuccess("Your expense report has been generated and downloaded successfully.");
+            setSuccess(
+                "Your expense report has been generated and downloaded successfully."
+            );
         } catch (err: any) {
             let message = "Unable to generate the report. Please try again.";
 
-            // The backend may return a JSON error inside a Blob.
             if (err.response?.data instanceof Blob) {
                 try {
                     const errorData = JSON.parse(
@@ -79,110 +87,73 @@ function ReportsPage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-[#0b1020] text-white">
+        <div className="relative space-y-8">
 
-            {/* Sidebar */}
-            <aside className="hidden w-64 shrink-0 flex-col border-r border-white/10 bg-[#10172a] p-6 md:flex">
+            {/* Subtle background lighting */}
+            <div className="pointer-events-none absolute -right-20 top-10 -z-10 h-72 w-72 rounded-full bg-violet-600/10 blur-[110px]" />
+            <div className="pointer-events-none absolute -left-20 top-96 -z-10 h-64 w-64 rounded-full bg-indigo-600/[0.08] blur-[100px]" />
 
-                <div className="mb-12">
-                    <h1 className="text-2xl font-bold tracking-tight">
-                        Expense<span className="text-indigo-400">Flow</span>
-                    </h1>
-
-                    <p className="mt-1 text-xs text-slate-500">
-                        PERSONAL FINANCE TRACKER
-                    </p>
-                </div>
-
-                <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                    Workspace
+            {/* Page heading */}
+            <section>
+                <p className="text-sm font-medium tracking-wide text-violet-300">
+                    FINANCIAL OVERVIEW
                 </p>
 
-                <nav className="space-y-2">
-                    <button
-                        onClick={() => navigate("/dashboard")}
-                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
-                    >
-                        <span className="text-lg">▦</span>
-                        Dashboard
-                    </button>
+                <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+                    Reports
+                </h1>
 
-                    <button
-                        onClick={() => navigate("/expenses")}
-                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
-                    >
-                        <span className="text-lg">↗</span>
-                        Expenses
-                    </button>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                    Generate detailed financial reports and review your spending
+                    activity over any selected period.
+                </p>
+            </section>
 
-                    <button
-                        onClick={() => navigate("/categories")}
-                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
-                    >
-                        <span className="text-lg">◈</span>
-                        Categories
-                    </button>
+            {/* PDF Report card */}
+            <section className={`${glassCard} relative w-full overflow-hidden`}>
 
-                    <button
-                        className="flex w-full items-center gap-3 rounded-xl bg-indigo-500/15 px-4 py-3 text-left text-sm font-medium text-indigo-300"
-                    >
-                        <span className="text-lg">▤</span>
-                        Reports
-                    </button>
-                </nav>
+                {/* Top accent */}
+                <div className="h-1 w-full bg-gradient-to-r from-violet-500 via-indigo-400 to-blue-400" />
 
-                <div className="mt-auto rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                    <p className="text-sm font-semibold">Spending insights</p>
-                    <p className="mt-2 text-xs leading-5 text-slate-400">
-                        Generate reports to review your expenses over a selected period.
-                    </p>
-                </div>
-            </aside>
+                {/* Card heading */}
+                <div className="border-b border-white/10 p-6 sm:p-8">
+                    <div className="flex items-center gap-4">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-300/20 bg-gradient-to-br from-violet-500/20 to-indigo-500/10 shadow-lg shadow-violet-950/20">
+                            <FileText
+                                size={27}
+                                className="text-violet-300"
+                            />
+                        </div>
 
-            {/* Main content */}
-            <main className="min-w-0 flex-1 p-5 sm:p-8 lg:p-10">
+                        <div>
+                            <h2 className="text-xl font-semibold">
+                                Generate PDF Report
+                            </h2>
 
-                {/* Header */}
-                <header className="mb-10">
-                    <p className="text-sm text-slate-400">
-                        Financial Overview
-                    </p>
-
-                    <h2 className="mt-1 text-3xl font-bold tracking-tight">
-                        Expense Reports
-                    </h2>
-
-                    <p className="mt-2 text-sm text-slate-400">
-                        Generate and download PDF reports of your spending.
-                    </p>
-                </header>
-
-                {/* Report card */}
-                <section className="max-w-3xl overflow-hidden rounded-3xl border border-white/10 bg-[#111a30]">
-
-                    <div className="border-b border-white/10 p-6 sm:p-8">
-                        <div className="flex items-center gap-4">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/15 text-3xl text-indigo-300">
-                                ▤
-                            </div>
-
-                            <div>
-                                <h3 className="text-xl font-semibold">
-                                    Generate PDF Report
-                                </h3>
-
-                                <p className="mt-1 text-sm text-slate-400">
-                                    Choose the period you want to review.
-                                </p>
-                            </div>
+                            <p className="mt-1 text-sm text-slate-400">
+                                Choose a reporting period and download your
+                                expense summary.
+                            </p>
                         </div>
                     </div>
+                </div>
 
-                    <div className="space-y-6 p-6 sm:p-8">
+                <div className="space-y-7 p-6 sm:p-8 lg:p-9">
 
-                        {/* Date selection */}
-                        <div className="grid gap-5 sm:grid-cols-2">
+                    {/* Reporting period */}
+                    <div>
+                        <div className="mb-5 flex items-center gap-2">
+                            <CalendarDays
+                                size={18}
+                                className="text-violet-300"
+                            />
 
+                            <h3 className="text-sm font-semibold text-slate-200">
+                                Reporting Period
+                            </h3>
+                        </div>
+
+                        <div className="grid gap-6 sm:grid-cols-2">
                             <div>
                                 <label
                                     htmlFor="startDate"
@@ -195,8 +166,12 @@ function ReportsPage() {
                                     id="startDate"
                                     type="date"
                                     value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full rounded-xl border border-white/10 bg-[#0b1020] px-4 py-3 text-white outline-none transition focus:border-indigo-400"
+                                    onChange={(e) => {
+                                        setStartDate(e.target.value);
+                                        setError("");
+                                        setSuccess("");
+                                    }}
+                                    className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3.5 text-sm text-white outline-none transition [color-scheme:dark] hover:border-white/20 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/10"
                                 />
                             </div>
 
@@ -213,63 +188,96 @@ function ReportsPage() {
                                     type="date"
                                     value={endDate}
                                     min={startDate || undefined}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full rounded-xl border border-white/10 bg-[#0b1020] px-4 py-3 text-white outline-none transition focus:border-indigo-400"
+                                    onChange={(e) => {
+                                        setEndDate(e.target.value);
+                                        setError("");
+                                        setSuccess("");
+                                    }}
+                                    className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3.5 text-sm text-white outline-none transition [color-scheme:dark] hover:border-white/20 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/10"
                                 />
                             </div>
                         </div>
+                    </div>
 
-                        {/* Information */}
-                        <div className="rounded-xl border border-indigo-400/20 bg-indigo-500/10 p-4">
-                            <p className="text-sm font-medium text-indigo-200">
-                                What will your report contain?
-                            </p>
+                    {/* Report contents */}
+                    <div className="rounded-2xl border border-violet-400/15 bg-gradient-to-br from-violet-500/[0.10] to-indigo-500/[0.04] p-5 sm:p-6">
+                        <div className="flex items-center gap-2">
+                            <Sparkles
+                                size={17}
+                                className="text-violet-300"
+                            />
 
-                            <ul className="mt-3 space-y-2 text-sm text-slate-400">
-                                <li>✓ Selected reporting period</li>
-                                <li>✓ Total number of expenses</li>
-                                <li>✓ Total spending amount</li>
-                                <li>✓ Expense titles, dates and categories</li>
-                            </ul>
+                            <h3 className="text-sm font-semibold text-violet-200">
+                                What your report contains
+                            </h3>
                         </div>
 
-                        {/* Error message */}
-                        {error && (
-                            <div className="rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-300">
-                                {error}
-                            </div>
-                        )}
-
-                        {/* Success message */}
-                        {success && (
-                            <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">
-                                {success}
-                            </div>
-                        )}
-
-                        {/* Generate button */}
-                        <button
-                            type="button"
-                            onClick={handleGenerateReport}
-                            disabled={loading}
-                            className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-4 font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {loading ? (
-                                "Generating Report..."
-                            ) : (
-                                <>
-                                    <span className="text-xl">↓</span>
-                                    Generate & Download PDF
-                                </>
-                            )}
-                        </button>
-
-                        <p className="text-center text-xs text-slate-500">
-                            Your report contains only your own expense records.
+                        <p className="mt-2 text-xs leading-5 text-slate-400">
+                            Your PDF will include the following information
+                            for the selected reporting period.
                         </p>
+
+                        <div className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+                            {[
+                                "Selected reporting period",
+                                "Total number of expenses",
+                                "Total spending amount",
+                                "Expense titles and dates",
+                                "Expense categories",
+                            ].map((item) => (
+                                <div
+                                    key={item}
+                                    className="flex items-center gap-2.5 text-sm text-slate-300"
+                                >
+                                    <CheckCircle2
+                                        size={16}
+                                        className="shrink-0 text-emerald-400"
+                                    />
+                                    {item}
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                </section>
-            </main>
+
+                    {/* Error message */}
+                    {error && (
+                        <div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4 text-sm text-rose-300">
+                            {error}
+                        </div>
+                    )}
+
+                    {/* Success message */}
+                    {success && (
+                        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">
+                            {success}
+                        </div>
+                    )}
+
+                    {/* Generate button */}
+                    <button
+                        type="button"
+                        onClick={handleGenerateReport}
+                        disabled={loading}
+                        className="group flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-500 px-6 py-4 font-semibold text-white shadow-lg shadow-violet-950/30 transition duration-300 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-xl hover:shadow-violet-900/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+                    >
+                        {loading ? (
+                            "Generating Report..."
+                        ) : (
+                            <>
+                                <Download
+                                    size={19}
+                                    className="transition-transform group-hover:translate-y-0.5"
+                                />
+                                Generate & Download PDF
+                            </>
+                        )}
+                    </button>
+
+                    <p className="text-center text-xs text-slate-500">
+                        Your report contains only your own expense records.
+                    </p>
+                </div>
+            </section>
         </div>
     );
 }
