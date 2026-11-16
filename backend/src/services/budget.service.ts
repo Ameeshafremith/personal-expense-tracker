@@ -112,6 +112,7 @@ export const getBudgets = async (
     return results;
 };
 
+
 export const updateBudget = async (
     budgetId: string,
     userId: string,
@@ -121,48 +122,103 @@ export const updateBudget = async (
         throw new Error("Invalid budget ID");
     }
 
-    if (data.categoryId) {
-        if (!Types.ObjectId.isValid(data.categoryId)) {
-            throw new Error("Invalid category ID");
-        }
+    // Find the existing budget owned by this user
+    const existingBudget = await Budget.findOne({
+        _id: budgetId,
+        userId
+    });
 
-        const category = await Category.findOne({
-            _id: data.categoryId,
-            userId
-        });
-
-        if (!category) {
-            throw new Error("Category not found");
-        }
-    }
-
-    if (data.amount !== undefined &&
-        (!Number.isFinite(data.amount) || data.amount <= 0)) {
-        throw new Error("Budget amount must be greater than zero");
-    }
-
-    if (data.month !== undefined &&
-        (!Number.isInteger(data.month) ||
-            data.month < 1 || data.month > 12)) {
-        throw new Error("Invalid month");
-    }
-
-    if (data.year !== undefined &&
-        (!Number.isInteger(data.year) || data.year < 2000)) {
-        throw new Error("Invalid year");
-    }
-
-    const budget = await Budget.findOneAndUpdate(
-        { _id: budgetId, userId },
-        data,
-        { new: true, runValidators: true }
-    );
-
-    if (!budget) {
+    if (!existingBudget) {
         throw new Error("Budget not found");
     }
 
-    return budget;
+    // Determine the final values after the update
+    const categoryId = data.categoryId || existingBudget.categoryId.toString();
+    const month = data.month ?? existingBudget.month;
+    const year = data.year ?? existingBudget.year;
+
+    // Validate category ownership
+    if (!Types.ObjectId.isValid(categoryId)) {
+        throw new Error("Invalid category ID");
+    }
+
+    const category = await Category.findOne({
+        _id: categoryId,
+        userId
+    });
+
+    if (!category) {
+        throw new Error("Category not found");
+    }
+
+    // Validate amount
+    if (
+        data.amount !== undefined &&
+        (!Number.isFinite(data.amount) || data.amount <= 0)
+    ) {
+        throw new Error("Budget amount must be greater than zero");
+    }
+
+    // Validate month
+    if (
+        !Number.isInteger(month) ||
+        month < 1 ||
+        month > 12
+    ) {
+        throw new Error("Invalid month");
+    }
+
+    // Validate year
+    if (!Number.isInteger(year) || year < 2000) {
+        throw new Error("Invalid year");
+    }
+
+    // Prevent duplicate category budgets for the same user/month/year
+    const duplicateBudget = await Budget.findOne({
+        _id: { $ne: budgetId },
+        userId,
+        categoryId,
+        month,
+        year
+    });
+
+    if (duplicateBudget) {
+        throw new Error(
+            "A budget already exists for this category and month"
+        );
+    }
+
+    // Update the budget
+    try {
+        const updatedBudget = await Budget.findOneAndUpdate(
+            { _id: budgetId, userId },
+            {
+                ...data,
+                categoryId,
+                month,
+                year
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        ).populate("categoryId", "name");
+
+        if (!updatedBudget) {
+            throw new Error("Budget not found");
+        }
+
+        return updatedBudget;
+
+    } catch (error: any) {
+        if (error.code === 11000) {
+            throw new Error(
+                "A budget already exists for this category and month"
+            );
+        }
+
+        throw error;
+    }
 };
 
 export const deleteBudget = async (

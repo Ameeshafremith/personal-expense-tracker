@@ -7,7 +7,7 @@ import {
     ChartPie,
     Mail,
     PiggyBank,
-    CalendarDays,
+    TrendingUp,
     Calculator,
     FileChartColumn,
 } from "lucide-react";
@@ -25,7 +25,7 @@ const navigationItems = [
     { name: "Budgets", path: "/budgets", icon: ChartPie },
     { name: "Envelopes", path: "/envelopes", icon: Mail },
     { name: "Savings", path: "/savings", icon: PiggyBank },
-    { name: "Calendar", path: "/calendar", icon: CalendarDays },
+    { name: "Income Management",path: "/income",icon: TrendingUp},
     { name: "Simulator", path: "/simulator", icon: Calculator },
     { name: "Reports", path: "/reports", icon: FileChartColumn },
 ];

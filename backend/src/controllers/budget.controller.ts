@@ -16,7 +16,7 @@ const getErrorStatus = (message: string) => {
         message.includes("Invalid") ||
         message.includes("must") ||
         message.includes("required") ||
-        message.includes("already") 
+        message.includes("already")
     ) {
         return 400;
     }

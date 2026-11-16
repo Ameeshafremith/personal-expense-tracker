@@ -1,16 +1,19 @@
-
 import { Types } from "mongoose";
-import Expense from "../models/expense.model.js";
+import Transaction from "../models/transaction.model.js";
 
 // Get dashboard statistics for the logged-in user
 export const getDashboardSummary = async (userId: string) => {
     const userObjectId = new Types.ObjectId(userId);
 
+    // Only count expense transactions as spending
+    const expenseFilter = {
+        userId: userObjectId,
+        type: "expense" as const
+    };
+
     // Calculate total spending
-    const totalResult = await Expense.aggregate([
-        {
-            $match: { userId: userObjectId }
-        },
+    const totalResult = await Transaction.aggregate([
+        { $match: expenseFilter },
         {
             $group: {
                 _id: null,
@@ -21,16 +24,12 @@ export const getDashboardSummary = async (userId: string) => {
 
     const totalAmount = totalResult[0]?.totalAmount ?? 0;
 
-    // Count all expenses
-    const expenseCount = await Expense.countDocuments({
-        userId: userObjectId
-    });
+    // Count expense transactions only
+    const expenseCount = await Transaction.countDocuments(expenseFilter);
 
     // Calculate spending and expense count by category
-    const categoryStats = await Expense.aggregate([
-        {
-            $match: { userId: userObjectId }
-        },
+    const categoryStats = await Transaction.aggregate([
+        { $match: expenseFilter },
         {
             $group: {
                 _id: "$categoryId",
@@ -46,9 +45,7 @@ export const getDashboardSummary = async (userId: string) => {
                 as: "category"
             }
         },
-        {
-            $unwind: "$category"
-        },
+        { $unwind: "$category" },
         {
             $project: {
                 _id: 0,
@@ -58,9 +55,7 @@ export const getDashboardSummary = async (userId: string) => {
                 totalAmount: 1
             }
         },
-        {
-            $sort: { expenseCount: -1 as const }
-        }
+        { $sort: { expenseCount: -1 as const } }
     ]);
 
     // Find the most frequently used category
@@ -71,10 +66,8 @@ export const getDashboardSummary = async (userId: string) => {
         }
         : null;
 
-    // Get the five most recent expenses
-    const recentExpenses = await Expense.find({
-        userId: userObjectId
-    })
+    // Get the five most recent expense transactions
+    const recentExpenses = await Transaction.find(expenseFilter)
         .populate("categoryId", "name")
         .sort({ date: -1 })
         .limit(5);

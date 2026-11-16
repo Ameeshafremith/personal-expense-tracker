@@ -4,7 +4,8 @@ import {
     createIncome,
     getIncomes,
     getIncomeById,
-    receiveIncome
+    receiveIncome,
+    updateIncome
 } from "../services/income.service.js";
 
 const getErrorStatus = (message: string) => {
@@ -203,3 +204,89 @@ export const markIncomeReceived = async (
         });
     }
 };
+
+
+export const editIncome = async (req: Request, res: Response) => {
+    try {
+        const {
+            title,
+            amount,
+            frequency,
+            walletId,
+            expectedDate,
+            receivedDate,
+            description
+        } = req.body;
+
+        const updateData: {
+            title?: string;
+            amount?: number;
+            frequency?: "one_time" | "monthly";
+            walletId?: string;
+            expectedDate?: Date;
+            receivedDate?: Date;
+            description?: string;
+        } = {};
+
+        if (title !== undefined) updateData.title = title;
+
+        if (amount !== undefined) {
+            updateData.amount = Number(amount);
+        }
+
+        if (frequency !== undefined) {
+            updateData.frequency = frequency;
+        }
+
+        if (walletId !== undefined) {
+            updateData.walletId = walletId;
+        }
+
+        if (expectedDate !== undefined) {
+            if (Number.isNaN(Date.parse(expectedDate))) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid expected date"
+                });
+            }
+
+            updateData.expectedDate = new Date(expectedDate);
+        }
+
+        if (receivedDate !== undefined) {
+            if (Number.isNaN(Date.parse(receivedDate))) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid received date"
+                });
+            }
+
+            updateData.receivedDate = new Date(receivedDate);
+        }
+
+        if (description !== undefined) {
+            updateData.description = description;
+        }
+
+        const income = await updateIncome(
+            String(req.params.incomeId),
+            req.user!.userId,
+            updateData
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Income updated successfully",
+            data: income
+        });
+
+    } catch (error: any) {
+        const message = error.message || "Failed to update income";
+
+        return res.status(getErrorStatus(message)).json({
+            success: false,
+            message
+        });
+    }
+};
+
