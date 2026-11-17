@@ -346,7 +346,7 @@ export const forgotPassword = async (
             return;
         }
 
-        // Generate a cryptographically secure reset token.
+        // Generate a secure reset token.
         const resetToken = randomBytes(32).toString("hex");
 
         // Store only the SHA-256 hash.
