@@ -893,7 +893,7 @@ function RegisterPage() {
                             onClick={(e) => handleSwitchClick(e, "/login", "back")}
                             className="font-semibold text-white underline underline-offset-2 transition-colors hover:text-violet-300"
                         >
-                            Log in
+                            Sign in
                         </Link>
                     </p>
                 </section>
