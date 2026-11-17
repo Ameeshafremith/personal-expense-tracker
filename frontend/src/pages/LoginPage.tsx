@@ -823,9 +823,9 @@ function LoginPage() {
                 <section className="welcome-panel relative z-10">
 
                     <h2 className="field-in field-in-2 max-w-[300px] text-[clamp(26px,3.6vw,34px)] font-extrabold leading-[1.12] tracking-tight">
-                        HELLO,
+                        Welcome to,
                         <br />
-                        FRIEND!
+                        ExpenseFlow!
                     </h2>
 
                     <p className="field-in field-in-3 mt-4 max-w-[240px] text-[12px] leading-[1.7] text-slate-300/80">
