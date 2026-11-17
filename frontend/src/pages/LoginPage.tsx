@@ -61,7 +61,7 @@ function LoginPage() {
         "h-[40px] w-full bg-transparent pl-7 pr-8 text-[13px] font-medium tracking-wide text-white outline-none placeholder:text-[12px] placeholder:font-normal placeholder:text-slate-400/60";
 
     return (
-        <main className="fixed inset-0 flex items-center justify-center overflow-hidden bg-[#05060D] text-white">
+        <main className="auth-page fixed inset-0 flex items-center justify-center overflow-hidden bg-[#05060D] text-white">
 
             <style>{`
                 @keyframes cardEntrance {
@@ -229,6 +229,65 @@ function LoginPage() {
                     .error-shake,
                     .field-in {
                         animation: none;
+                    }
+                }
+
+                /* Responsive layout - tablet and mobile only */
+                @media (max-width: 1023px) {
+                    .auth-page {
+                        position: relative;
+                        min-height: 100svh;
+                        height: auto;
+                        overflow-x: hidden;
+                        overflow-y: auto;
+                        padding: 24px 16px;
+                        box-sizing: border-box;
+                    }
+
+                    .login-card {
+                        width: min(520px, 100%);
+                        height: auto;
+                        min-height: 0;
+                        grid-template-columns: 1fr;
+                        overflow: visible;
+                        border-radius: 20px;
+                    }
+
+                    .login-panel {
+                        padding: 36px clamp(22px, 6vw, 40px);
+                    }
+
+                    .welcome-panel {
+                        display: none;
+                    }
+
+                    .login-panel .field-in {
+                        animation-delay: 0.1s;
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .auth-page {
+                        padding: 18px 12px;
+                    }
+
+                    .login-card {
+                        width: 100%;
+                        border-radius: 16px;
+                    }
+
+                    .login-panel {
+                        padding: 30px 22px;
+                    }
+
+                    .login-panel input {
+                        font-size: 14px;
+                    }
+                }
+
+                @media (max-height: 650px) and (max-width: 1023px) {
+                    .auth-page {
+                        align-items: flex-start;
                     }
                 }
             `}</style>

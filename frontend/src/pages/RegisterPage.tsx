@@ -68,7 +68,7 @@ function RegisterPage() {
         "pointer-events-none absolute -bottom-px left-0 h-[2px] w-full origin-left scale-x-0 bg-white shadow-[0_0_10px_rgba(167,139,250,0.8)] transition-transform duration-500 ease-out group-focus-within:scale-x-100";
 
     return (
-        <main className="fixed inset-0 flex items-center justify-center overflow-hidden bg-[#05060D] text-white">
+        <main className="auth-page fixed inset-0 flex items-center justify-center overflow-hidden bg-[#05060D] text-white">
 
             <style>{`
                 @keyframes cardEntrance {
@@ -238,6 +238,61 @@ function RegisterPage() {
                     .error-shake,
                     .field-in {
                         animation: none;
+                    }
+                }
+
+                /* Responsive layout - tablet and mobile only */
+                @media (max-width: 1023px) {
+                    .auth-page {
+                        position: relative;
+                        min-height: 100svh;
+                        height: auto;
+                        overflow-x: hidden;
+                        overflow-y: auto;
+                        padding: 24px 16px;
+                        box-sizing: border-box;
+                    }
+
+                    .register-card {
+                        width: min(520px, 100%);
+                        height: auto;
+                        min-height: 0;
+                        grid-template-columns: 1fr;
+                        overflow: visible;
+                        border-radius: 20px;
+                    }
+
+                    .welcome-panel {
+                        display: none;
+                    }
+
+                    .register-panel {
+                        padding: 32px clamp(22px, 6vw, 40px);
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .auth-page {
+                        padding: 18px 12px;
+                    }
+
+                    .register-card {
+                        width: 100%;
+                        border-radius: 16px;
+                    }
+
+                    .register-panel {
+                        padding: 28px 22px;
+                    }
+
+                    .register-panel input {
+                        font-size: 14px;
+                    }
+                }
+
+                @media (max-height: 720px) and (max-width: 1023px) {
+                    .auth-page {
+                        align-items: flex-start;
                     }
                 }
             `}</style>
