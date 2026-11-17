@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     loginUser,
     clearAuthError
@@ -15,9 +15,16 @@ import {
     ArrowRight
 } from "lucide-react";
 
+type TransitionDir = "forward" | "back";
+
+// Must match the wipe animation durations in the <style> block below
+const WIPE_COVER_MS = 520;
+const WIPE_REVEAL_MS = 900;
+
 function LoginPage() {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const { loading, error } = useAppSelector(
         (state) => state.auth
@@ -26,6 +33,79 @@ function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+
+    // Glass transition state
+    const [enterDir] = useState<TransitionDir | undefined>(
+        () =>
+            (location.state as { authTransition?: TransitionDir } | null)
+                ?.authTransition
+    );
+    const [revealing, setRevealing] = useState(Boolean(enterDir));
+    const [leaving, setLeaving] = useState<TransitionDir | null>(null);
+    const timerRef = useRef<number | null>(null);
+
+    // This page never scrolls
+    useEffect(() => {
+        const prevBody = document.body.style.overflow;
+        const prevHtml = document.documentElement.style.overflow;
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+
+        return () => {
+            document.body.style.overflow = prevBody;
+            document.documentElement.style.overflow = prevHtml;
+        };
+    }, []);
+
+    // Remove the reveal overlay once its animation is done
+    useEffect(() => {
+        if (!revealing) return;
+        const t = window.setTimeout(() => setRevealing(false), WIPE_REVEAL_MS);
+        return () => window.clearTimeout(t);
+    }, [revealing]);
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) window.clearTimeout(timerRef.current);
+        };
+    }, []);
+
+    const transitionTo = (path: string, dir: TransitionDir) => {
+        if (leaving) return;
+
+        const reduced = window.matchMedia(
+            "(prefers-reduced-motion: reduce)"
+        ).matches;
+
+        if (reduced) {
+            navigate(path);
+            return;
+        }
+
+        setLeaving(dir);
+        timerRef.current = window.setTimeout(() => {
+            navigate(path, { state: { authTransition: dir } });
+        }, WIPE_COVER_MS);
+    };
+
+    const handleSwitchClick = (
+        e: React.MouseEvent<HTMLAnchorElement>,
+        path: string,
+        dir: TransitionDir
+    ) => {
+        if (
+            e.defaultPrevented ||
+            e.button !== 0 ||
+            e.metaKey ||
+            e.ctrlKey ||
+            e.shiftKey ||
+            e.altKey
+        ) {
+            return;
+        }
+        e.preventDefault();
+        transitionTo(path, dir);
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -58,7 +138,15 @@ function LoginPage() {
     };
 
     const inputStyle =
-        "h-[40px] w-full bg-transparent pl-7 pr-8 text-[13px] font-medium tracking-wide text-white outline-none placeholder:text-[12px] placeholder:font-normal placeholder:text-slate-400/60";
+        "auth-input w-full bg-transparent pl-7 pr-8 text-[13px] font-medium tracking-wide text-white outline-none placeholder:text-[12px] placeholder:font-normal placeholder:text-slate-400/60";
+
+    // Glass wipe direction: forward sweeps right -> left, back sweeps left -> right
+    const wipeDir: TransitionDir = leaving ?? enterDir ?? "forward";
+    const wipeVars = (
+        wipeDir === "forward"
+            ? { "--wipe-start": "110%", "--wipe-end": "-110%", "--wipe-skew": "-10deg" }
+            : { "--wipe-start": "-110%", "--wipe-end": "110%", "--wipe-skew": "10deg" }
+    ) as React.CSSProperties;
 
     return (
         <main className="auth-page fixed inset-0 flex items-center justify-center overflow-hidden bg-[#05060D] text-white">
@@ -72,6 +160,28 @@ function LoginPage() {
                     to {
                         opacity: 1;
                         transform: translateY(0) scale(1);
+                    }
+                }
+
+                @keyframes cardReveal {
+                    from {
+                        opacity: 0;
+                        transform: scale(0.955);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                }
+
+                @keyframes cardLeave {
+                    from {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                    to {
+                        opacity: 0.4;
+                        transform: scale(0.965);
                     }
                 }
 
@@ -152,16 +262,92 @@ function LoginPage() {
                     80% { transform: translateX(2px); }
                 }
 
-                .login-card {
+                /* Glass pane that sweeps across the screen between pages */
+                @keyframes wipeCover {
+                    from {
+                        transform: translateX(var(--wipe-start)) skewX(var(--wipe-skew));
+                    }
+                    to {
+                        transform: translateX(0) skewX(var(--wipe-skew));
+                    }
+                }
+
+                @keyframes wipeReveal {
+                    from {
+                        transform: translateX(0) skewX(var(--wipe-skew));
+                    }
+                    to {
+                        transform: translateX(var(--wipe-end)) skewX(var(--wipe-skew));
+                    }
+                }
+
+                /* ---------- Card + panel layout (desktop base) ---------- */
+                .auth-page {
+                    box-sizing: border-box;
+                    overscroll-behavior: none;
+                }
+
+                .auth-card {
+                    --field-h: 40px;
+                    --gap: 16px;
+                    --head-mb: 20px;
+                    --foot-mt: 20px;
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                    width: min(900px, 94vw);
+                    height: min(520px, 88vh);
+                    height: min(520px, 88dvh);
                     animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
                 }
 
-                .login-panel {
+                .auth-card.card-from-wipe {
+                    animation: cardReveal 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s both;
+                }
+
+                .auth-card.card-leaving {
+                    animation: cardLeave 0.5s ease-in both;
+                    pointer-events: none;
+                }
+
+                .form-panel {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    min-width: 0;
+                    padding: 24px clamp(20px, 5vw, 56px);
                     animation: panelEntranceLeft 0.9s ease-out 0.15s both;
                 }
 
                 .welcome-panel {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    justify-content: center;
+                    min-width: 0;
+                    padding: 24px clamp(20px, 4vw, 48px) 24px clamp(28px, 7vw, 88px);
                     animation: panelEntranceRight 0.9s ease-out 0.25s both;
+                }
+
+                .form-logo {
+                    margin-bottom: var(--head-mb);
+                }
+
+                .form-head {
+                    margin-bottom: var(--head-mb);
+                }
+
+                .form-stack {
+                    display: flex;
+                    flex-direction: column;
+                    gap: var(--gap);
+                }
+
+                .form-foot {
+                    margin-top: var(--foot-mt);
+                }
+
+                .auth-input {
+                    height: var(--field-h);
                 }
 
                 .ambient-float {
@@ -204,23 +390,69 @@ function LoginPage() {
                     );
                 }
 
-                .login-card:hover .card-spotlight {
+                .auth-card:hover .card-spotlight {
                     opacity: 1;
                 }
 
                 /* Keep browser autofill transparent so the glass look stays */
-                .login-card input:-webkit-autofill,
-                .login-card input:-webkit-autofill:hover,
-                .login-card input:-webkit-autofill:focus {
+                .auth-card input:-webkit-autofill,
+                .auth-card input:-webkit-autofill:hover,
+                .auth-card input:-webkit-autofill:focus {
                     -webkit-text-fill-color: #ffffff;
                     box-shadow: 0 0 0 1000px transparent inset;
                     transition: background-color 9999s ease-in-out 0s;
                     caret-color: #ffffff;
                 }
 
+                /* ---------- Glass wipe overlay ---------- */
+                .glass-wipe {
+                    position: fixed;
+                    top: 0;
+                    bottom: 0;
+                    left: -30vw;
+                    width: 160vw;
+                    z-index: 50;
+                    pointer-events: none;
+                    background: linear-gradient(
+                        100deg,
+                        rgba(76, 54, 160, 0.50) 0%,
+                        rgba(22, 19, 44, 0.58) 50%,
+                        rgba(36, 70, 170, 0.50) 100%
+                    );
+                    -webkit-backdrop-filter: blur(28px) saturate(1.6);
+                    backdrop-filter: blur(28px) saturate(1.6);
+                    box-shadow:
+                        inset 2px 0 0 rgba(255, 255, 255, 0.38),
+                        inset -2px 0 0 rgba(255, 255, 255, 0.38),
+                        0 0 90px rgba(139, 92, 246, 0.35);
+                    will-change: transform;
+                }
+
+                .glass-wipe::after {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    background: linear-gradient(
+                        90deg,
+                        transparent 38%,
+                        rgba(255, 255, 255, 0.10) 50%,
+                        transparent 62%
+                    );
+                }
+
+                .glass-wipe-cover {
+                    animation: wipeCover 0.5s cubic-bezier(0.7, 0, 0.3, 1) both;
+                }
+
+                .glass-wipe-reveal {
+                    animation: wipeReveal 0.8s cubic-bezier(0.7, 0, 0.3, 1) both;
+                }
+
                 @media (prefers-reduced-motion: reduce) {
-                    .login-card,
-                    .login-panel,
+                    .auth-card,
+                    .auth-card.card-from-wipe,
+                    .auth-card.card-leaving,
+                    .form-panel,
                     .welcome-panel,
                     .ambient-float,
                     .bg-drift,
@@ -230,64 +462,129 @@ function LoginPage() {
                     .field-in {
                         animation: none;
                     }
+
+                    .glass-wipe {
+                        display: none;
+                    }
                 }
 
-                /* Responsive layout - tablet and mobile only */
-                @media (max-width: 1023px) {
-                    .auth-page {
-                        position: relative;
-                        min-height: 100svh;
-                        height: auto;
-                        overflow-x: hidden;
-                        overflow-y: auto;
-                        padding: 24px 16px;
-                        box-sizing: border-box;
+                /* ---------- Tablet: keep the desktop split layout, scaled up ---------- */
+                @media (min-width: 768px) and (max-width: 1023px) {
+                    .auth-card {
+                        --field-h: 46px;
+                        --gap: 20px;
+                        --head-mb: 26px;
+                        --foot-mt: 24px;
+                        width: min(860px, 96vw);
+                        height: min(620px, 88vh);
+                        height: min(620px, 88dvh);
                     }
 
-                    .login-card {
-                        width: min(520px, 100%);
-                        height: auto;
-                        min-height: 0;
-                        grid-template-columns: 1fr;
-                        overflow: visible;
-                        border-radius: 20px;
-                    }
-
-                    .login-panel {
-                        padding: 36px clamp(22px, 6vw, 40px);
+                    .form-panel {
+                        padding: 28px 40px;
                     }
 
                     .welcome-panel {
+                        padding: 28px 36px 28px 52px;
+                    }
+
+                    .form-panel .auth-input {
+                        font-size: 14px;
+                    }
+
+                    .form-panel .form-title {
+                        font-size: 28px;
+                    }
+                }
+
+                /* ---------- Mobile: single glass card, never scrolls ---------- */
+                @media (max-width: 767px) {
+                    .auth-page {
+                        padding: 14px;
+                    }
+
+                    .auth-card {
+                        --field-h: 46px;
+                        --gap: 16px;
+                        --head-mb: 20px;
+                        --foot-mt: 20px;
+                        grid-template-columns: minmax(0, 1fr);
+                        width: min(420px, 100%);
+                        height: auto;
+                        max-height: 100%;
+                        border-radius: 20px !important;
+                    }
+
+                    .welcome-panel,
+                    .split-decor {
                         display: none;
                     }
 
-                    .login-panel .field-in {
-                        animation-delay: 0.1s;
-                    }
-                }
-
-                @media (max-width: 480px) {
-                    .auth-page {
-                        padding: 18px 12px;
+                    .form-panel {
+                        padding: 30px 26px;
                     }
 
-                    .login-card {
-                        width: 100%;
-                        border-radius: 16px;
+                    .form-panel .auth-input {
+                        font-size: 16px;
                     }
 
-                    .login-panel {
-                        padding: 30px 22px;
-                    }
-
-                    .login-panel input {
+                    .form-panel .auth-input::placeholder {
                         font-size: 14px;
                     }
+
+                    .form-panel .form-title {
+                        font-size: 26px;
+                    }
                 }
 
-                @media (max-height: 650px) and (max-width: 1023px) {
-                    .auth-page {
-                        align-items: flex-start;
+                /* ---------- Short screens (phones, small tablets): tighten spacing ---------- */
+                @media (max-width: 1023px) and (max-height: 700px) {
+                    .auth-card {
+                        --field-h: 42px;
+                        --gap: 12px;
+                        --head-mb: 14px;
+                        --foot-mt: 14px;
+                    }
+
+                    .form-panel {
+                        padding-top: 20px;
+                        padding-bottom: 20px;
+                    }
+                }
+
+                @media (max-width: 1023px) and (max-height: 600px) {
+                    .auth-card {
+                        --field-h: 38px;
+                        --gap: 10px;
+                        --head-mb: 10px;
+                        --foot-mt: 10px;
+                    }
+
+                    .form-sub {
+                        display: none;
+                    }
+                }
+
+                @media (max-width: 1023px) and (max-height: 480px) {
+                    .auth-card {
+                        --field-h: 34px;
+                        --gap: 6px;
+                        --head-mb: 8px;
+                        --foot-mt: 8px;
+                    }
+
+                    .form-panel {
+                        padding-top: 14px;
+                        padding-bottom: 14px;
+                    }
+
+                    .form-logo {
+                        display: none;
+                    }
+
+                    .welcome-panel {
+                        padding-top: 14px;
+                        padding-bottom: 14px;
                     }
                 }
             `}</style>
@@ -318,7 +615,9 @@ function LoginPage() {
             {/* Main glass card */}
             <div
                 onMouseMove={handleCardMouseMove}
-                className="login-card relative z-10 grid h-[min(520px,88vh)] w-[min(900px,94vw)] grid-cols-2 overflow-hidden rounded-[22px] border border-white/[0.18] bg-[#12101c]/40 shadow-[0_30px_80px_rgba(0,0,0,0.55),inset_0_1px_1px_rgba(255,255,255,0.22)] backdrop-blur-[30px] backdrop-saturate-150"
+                className={`auth-card relative z-10 overflow-hidden rounded-[22px] border border-white/[0.18] bg-[#12101c]/40 shadow-[0_30px_80px_rgba(0,0,0,0.55),inset_0_1px_1px_rgba(255,255,255,0.22)] backdrop-blur-[30px] backdrop-saturate-150 ${
+                    enterDir ? "card-from-wipe" : ""
+                } ${leaving ? "card-leaving" : ""}`}
             >
 
                 {/* Glass reflections */}
@@ -332,9 +631,9 @@ function LoginPage() {
                 {/* Cursor spotlight */}
                 <div className="card-spotlight pointer-events-none absolute inset-0 z-0" />
 
-                {/* Slanted glass crack + right panel shading */}
+                {/* Slanted glass crack + right panel shading (desktop / tablet) */}
                 <svg
-                    className="pointer-events-none absolute inset-0 z-0 h-full w-full"
+                    className="split-decor pointer-events-none absolute inset-0 z-0 h-full w-full"
                     viewBox="0 0 100 100"
                     preserveAspectRatio="none"
                     aria-hidden="true"
@@ -369,10 +668,10 @@ function LoginPage() {
                 </svg>
 
                 {/* LEFT PANEL - LOGIN */}
-                <section className="login-panel relative z-10 flex flex-col justify-center px-[clamp(20px,5vw,56px)] py-6">
+                <section className="form-panel relative z-10">
 
                     {/* Logo */}
-                    <div className="field-in field-in-1 mb-5 flex items-center gap-2">
+                    <div className="form-logo field-in field-in-1 flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-violet-300/30 bg-gradient-to-br from-violet-500/30 to-blue-500/20 shadow-[0_0_18px_rgba(139,92,246,0.25)]">
                             <Wallet size={15} className="text-violet-200" />
                         </div>
@@ -383,12 +682,12 @@ function LoginPage() {
                     </div>
 
                     {/* Heading */}
-                    <div className="field-in field-in-1 mb-5">
-                        <h2 className="text-[24px] font-bold tracking-tight">
+                    <div className="form-head field-in field-in-1">
+                        <h2 className="form-title text-[24px] font-bold tracking-tight">
                             Login
                         </h2>
 
-                        <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">
+                        <p className="form-sub mt-1.5 text-[11px] leading-relaxed text-slate-400">
                             Welcome back! Enter your credentials to continue.
                         </p>
                     </div>
@@ -396,7 +695,7 @@ function LoginPage() {
                     {/* Login form */}
                     <form
                         onSubmit={handleSubmit}
-                        className="w-full space-y-4"
+                        className="form-stack w-full"
                     >
 
                         {/* Email */}
@@ -417,6 +716,7 @@ function LoginPage() {
                                 <input
                                     id="email"
                                     type="email"
+                                    autoComplete="email"
                                     value={email}
                                     onChange={(e) => handleEmailChange(e.target.value)}
                                     placeholder="Enter your email"
@@ -446,6 +746,7 @@ function LoginPage() {
                                 <input
                                     id="password"
                                     type={showPassword ? "text" : "password"}
+                                    autoComplete="current-password"
                                     value={password}
                                     onChange={(e) => handlePasswordChange(e.target.value)}
                                     placeholder="Enter your password"
@@ -497,11 +798,12 @@ function LoginPage() {
                     </form>
 
                     {/* Register + forgot links */}
-                    <div className="field-in field-in-5 mt-5 flex flex-col items-center gap-1.5">
+                    <div className="form-foot field-in field-in-5 flex flex-col items-center gap-1.5">
                         <p className="text-[11px] text-slate-400">
                             Don't have an account?{" "}
                             <Link
                                 to="/register"
+                                onClick={(e) => handleSwitchClick(e, "/register", "forward")}
                                 className="font-semibold text-white underline underline-offset-2 transition-colors hover:text-violet-300"
                             >
                                 Sign Up
@@ -517,8 +819,8 @@ function LoginPage() {
                     </div>
                 </section>
 
-                {/* RIGHT PANEL - WELCOME */}
-                <section className="welcome-panel relative z-10 flex flex-col items-start justify-center py-6 pl-[clamp(28px,7vw,88px)] pr-[clamp(20px,4vw,48px)]">
+                {/* RIGHT PANEL - WELCOME (hidden on phones) */}
+                <section className="welcome-panel relative z-10">
 
                     <h2 className="field-in field-in-2 max-w-[300px] text-[clamp(26px,3.6vw,34px)] font-extrabold leading-[1.12] tracking-tight">
                         HELLO,
@@ -532,6 +834,7 @@ function LoginPage() {
 
                     <Link
                         to="/register"
+                        onClick={(e) => handleSwitchClick(e, "/register", "forward")}
                         className="field-in field-in-4 group relative mt-6 inline-flex h-[38px] items-center gap-2.5 overflow-hidden rounded-full border border-white/[0.22] bg-gradient-to-b from-white/[0.10] to-white/[0.03] px-5 text-[12px] font-semibold text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300/50 hover:from-violet-400/20 hover:to-indigo-500/10 hover:shadow-[0_8px_25px_rgba(139,92,246,0.22)]"
                     >
                         <span className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[400%]" />
@@ -545,6 +848,17 @@ function LoginPage() {
                     </Link>
                 </section>
             </div>
+
+            {/* Glass transition pane */}
+            {(leaving || revealing) && (
+                <div
+                    aria-hidden="true"
+                    className={`glass-wipe ${
+                        leaving ? "glass-wipe-cover" : "glass-wipe-reveal"
+                    }`}
+                    style={wipeVars}
+                />
+            )}
         </main>
     );
 }
