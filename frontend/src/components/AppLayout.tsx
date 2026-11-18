@@ -87,13 +87,14 @@ function AppLayout() {
             </div>
 
             {/* Fixed Header and Navigation */}
-            <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.05] bg-[#090D18]/70 px-4 py-5 backdrop-blur-2xl sm:px-6">
+            <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/15 bg-gradient-to-r from-[#17152B]/65 via-[#18243B]/60 to-[#111C32]/65 px-4 py-5 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-[30px] sm:px-6">
                 <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3">
 
                     {/* Brand */}
                     <button
                         onClick={() => navigate("/dashboard")}
-                        className="shrink-0 text-xl font-bold tracking-tight sm:text-2xl"
+                        className="shrink-0 text-xl font-bold italic tracking-tight drop-shadow-[0_2px_8px_rgba(167,139,250,0.45)] sm:text-2xl"
+                        //className="shrink-0 text-xl font-bold tracking-tight sm:text-2xl"
                     >
                         Expense<span className="text-violet-400">Flow</span>
                     </button>
@@ -165,7 +166,7 @@ function AppLayout() {
                                 setProfileMenuOpen((prev) => !prev);
                                 setMenuOpen(false);
                             }}
-                            className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 p-1.5 transition hover:bg-white/15"
+                            className="flex items-center gap-2 rounded-full border border-white/25 bg-white/[0.12] p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.18)] backdrop-blur-[30px] transition hover:bg-white/[0.18]"
                             aria-label="Open profile menu"
                             aria-expanded={profileMenuOpen}
                         >
@@ -232,7 +233,7 @@ function AppLayout() {
                 {menuOpen && (
                     <nav
                         id="mobile-navigation"
-                        className="mx-auto mt-4 grid max-w-[600px] grid-cols-2 gap-2 rounded-3xl border border-white/20 bg-[#171E30]/95 p-4 shadow-2xl backdrop-blur-2xl sm:grid-cols-3 lg:hidden"
+                        className="mx-auto mt-4 grid max-w-[600px] grid-cols-2 gap-2 rounded-3xl border border-white/20 bg-[#20243D]/75 p-4 shadow-2xl backdrop-blur-[30px] sm:grid-cols-3 lg:hidden"
                     >
                         {navigationItems.map((item) => (
                             <NavLink
